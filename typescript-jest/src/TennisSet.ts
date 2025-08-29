@@ -1,5 +1,7 @@
+export const notFinished = Symbol("notFinished");
+
 export interface TennisSet {
     completed: boolean;
     score: string;
-    winner: string | null
+    winner: string | typeof notFinished;
 }

@@ -1,5 +1,5 @@
 import { TennisGame } from "../src";
-import { TennisSet } from "../src/TennisSet";
+import { notFinished, TennisSet} from "../src/TennisSet";
 import { playerOneWin, playerTwoWin } from "./MockGames";
 
 // Helper to compute set status from a sequence of mock games
@@ -7,7 +7,7 @@ function computeSetFromGames(games: TennisGame[]) : TennisSet {
   let p1 = 0;
   let p2 = 0;
   let completed = false;
-  let winner: "player1" | "player2" | null = null;
+  let winner: "player1" | "player2" | typeof notFinished = notFinished;
 
   for (const g of games) {
     const score = g.getScore();
@@ -36,52 +36,55 @@ function computeSetFromGames(games: TennisGame[]) : TennisSet {
   return { completed, winner, score: scoreStr };
 }
 
-// Builders for sequences of game results (using mocks)
-const P1 = playerOneWin;
-const P2 = playerTwoWin;
-
 function buildSetSequence(targetP1: number, targetP2: number): TennisGame[] {
+    console.assert(targetP1 >= 0 && targetP1 <= 7, "Invalid targetP1");
+    console.assert(targetP2 >= 0 && targetP2 <= 7, "Invalid targetP2");
   // Builds a sequence that ends exactly at target score with player1 the winner (targetP1 > targetP2)
   // and ensures the set is not prematurely won before the last game.
-  const seq: TennisGame[] = [];
-  if (targetP1 === 6 && targetP2 >= 0 && targetP2 <= 4) {
-    // Make it b-b, then to 5-b, then last to 6-b
-    for (let i = 0; i < targetP2; i++) { seq.push(P1, P2); }
-    for (let i = 0; i < 5 - targetP2; i++) { seq.push(P1); }
-    seq.push(P1);
-    return seq;
+  const gamesPlayed: TennisGame[] = [];
+  let mostGames = Math.max(targetP1, targetP2);
+  for (let gameIndex = 0; gameIndex < mostGames; gameIndex++) {
+      if (gameIndex < targetP1) {
+          gamesPlayed.push(playerOneWin);
+      }
+      if (gameIndex < targetP2) {
+          gamesPlayed.push(playerTwoWin);
+      }
   }
-  if (targetP2 === 6 && targetP1 >= 0 && targetP1 <= 4) {
-    for (let i = 0; i < targetP1; i++) { seq.push(P2, P1); }
-    for (let i = 0; i < 5 - targetP1; i++) { seq.push(P2); }
-    seq.push(P2);
-    return seq;
-  }
-  if (targetP1 === 7 && targetP2 === 5) {
-    for (let i = 0; i < 5; i++) { seq.push(P1, P2); } // 5-5
-    seq.push(P1, P1); // 7-5
-    return seq;
-  }
-  if (targetP2 === 7 && targetP1 === 5) {
-    for (let i = 0; i < 5; i++) { seq.push(P2, P1); } // 5-5
-    seq.push(P2, P2); // 7-5
-    return seq;
-  }
-  if (targetP1 === 7 && targetP2 === 6) {
-    for (let i = 0; i < 6; i++) { seq.push(P1, P2); } // 6-6
-    seq.push(P1); // 7-6
-    return seq;
-  }
-  if (targetP2 === 7 && targetP1 === 6) {
-    for (let i = 0; i < 6; i++) { seq.push(P2, P1); } // 6-6
-    seq.push(P2); // 7-6
-    return seq;
-  }
-  throw new Error(`Unsupported target score ${targetP1}-${targetP2}`);
+  return gamesPlayed;
 }
 
 describe("Tennis Set winning rules (using mock games)", () => {
-  test("Player1 can win a set 6-0", () => {
+    test("set 1-0 is unfinished", () => {
+        const seq = buildSetSequence(1, 0);
+        const result = computeSetFromGames(seq);
+        expect(result.completed).toBe(false);
+        expect(result.winner).toBe(notFinished);
+        expect(result.score).toBe("1-0");
+    });
+    test("set 5-0 is unfinished", () => {
+        const seq = buildSetSequence(5, 0);
+        const result = computeSetFromGames(seq);
+        expect(result.completed).toBe(false);
+        expect(result.winner).toBe(notFinished);
+        expect(result.score).toBe("5-0");
+    });
+    test("set 0-1 is unfinished", () => {
+        const seq = buildSetSequence(0, 1);
+        const result = computeSetFromGames(seq);
+        expect(result.completed).toBe(false);
+        expect(result.winner).toBe(notFinished);
+        expect(result.score).toBe("0-1");
+    });
+    test("set 0-5 is unfinished", () => {
+        const seq = buildSetSequence(0, 5);
+        const result = computeSetFromGames(seq);
+        expect(result.completed).toBe(false);
+        expect(result.winner).toBe(notFinished);
+        expect(result.score).toBe("0-5");
+    });
+
+    test("Player1 can win a set 6-0", () => {
     const seq = buildSetSequence(6, 0);
     const result = computeSetFromGames(seq);
     expect(result.completed).toBe(true);
@@ -155,14 +158,11 @@ describe("Tennis Set winning rules (using mock games)", () => {
 
   test("6-5 is not a completed set (must win by two)", () => {
     // Build 6-5 without closing the set
-    const seq: TennisGame[] = [];
-    // Reach 5-5
-    for (let i = 0; i < 5; i++) seq.push(P1, P2);
-    // Go to 6-5
-    seq.push(P1);
+
+    const seq = buildSetSequence(6, 5);
     const result = computeSetFromGames(seq);
     expect(result.completed).toBe(false);
     expect(result.score).toBe("6-5");
-    expect(result.winner).toBeNull();
+    expect(result.winner).toBe(notFinished);
   });
 });
