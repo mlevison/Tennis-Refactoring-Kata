@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "javascript-jest",
+			"path": "../javascript-jest"
+		},
+		{
+			"name": "typescript-jest",
+			"path": "."
+		},
+		{
+			"name": "typescript",
+			"path": "../typescript"
+		}
+	],
+	"settings": {
+		"jest.disabledWorkspaceFolders": [
+			"Tennis-Refactoring-Kata",
+			"typescript"
+		]
+	}
+}

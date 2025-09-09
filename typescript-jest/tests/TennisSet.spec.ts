@@ -18,36 +18,41 @@ function computeSetFromGames(games: TennisGame[]) : TennisSet {
     } else {
       throw new Error(`Unexpected game score: ${score}`);
     }
-
+  }
     if ((p1 >= 6 || p2 >= 6) && Math.abs(p1 - p2) >= 2) {
-      completed = true;
-      winner = p1 > p2 ? "player1" : "player2";
-      break;
+        completed = true;
+        winner = p1 > p2 ? "player1" : "player2";
     }
     // Tiebreak resolution: after 6-6, next game decides 7-6
     if ((p1 === 7 && p2 === 6) || (p2 === 7 && p1 === 6)) {
-      completed = true;
-      winner = p1 > p2 ? "player1" : "player2";
-      break;
+        completed = true;
+        winner = p1 > p2 ? "player1" : "player2";
     }
-  }
 
+  const maxDiff = Math.max(p1 - p2, p2 - p1);
+  if (maxDiff > 6) {
+    throw new Error("Illegal games score");
+  }
+  if (p1 >= 7 && p2 < 5) {
+    throw new Error("Illegal games score");
+  }
+  if (p2 >= 7 && p1 < 5) {
+      throw new Error("Illegal games score");
+  }
   const scoreStr = `${p1}-${p2}`;
   return { completed, winner, score: scoreStr };
 }
 
 function buildSetSequence(targetP1: number, targetP2: number): TennisGame[] {
-    console.assert(targetP1 >= 0 && targetP1 <= 7, "Invalid targetP1");
-    console.assert(targetP2 >= 0 && targetP2 <= 7, "Invalid targetP2");
   // Builds a sequence that ends exactly at target score with player1 the winner (targetP1 > targetP2)
   // and ensures the set is not prematurely won before the last game.
-  const gamesPlayed: TennisGame[] = [];
-  let mostGames = Math.max(targetP1, targetP2);
-  for (let gameIndex = 0; gameIndex < mostGames; gameIndex++) {
-      if (gameIndex < targetP1) {
+  const gamesPlayed: TennisGame[] = new Array<TennisGame>();
+  const mostGames = Math.max(targetP1, targetP2);
+  for (let gameCounter = 0; gameCounter < mostGames; gameCounter++) {
+      if (gameCounter < targetP1) {
           gamesPlayed.push(playerOneWin);
       }
-      if (gameIndex < targetP2) {
+      if (gameCounter < targetP2) {
           gamesPlayed.push(playerTwoWin);
       }
   }
@@ -165,4 +170,14 @@ describe("Tennis Set winning rules (using mock games)", () => {
     expect(result.score).toBe("6-5");
     expect(result.winner).toBe(notFinished);
   });
+
+  test("7-1 illegal", () => {
+     const seq = buildSetSequence(7, 1);
+     expect(() => computeSetFromGames(seq)).toThrow();
+  });
+
+    test("1-7 illegal", () => {
+        const seq = buildSetSequence(1, 7);
+        expect(() => computeSetFromGames(seq)).toThrow();
+    });
 });
