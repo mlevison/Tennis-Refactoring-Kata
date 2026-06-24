@@ -13,9 +13,6 @@ export interface TennisSet {
   /** True once the set has been decided (no further games can be played). */
   isComplete(): boolean;
 
-  /** Name of the player who won the set, or null while it is still in play. */
-  getWinner(): string | null;
-
   /** True when the set is at six games all and a tiebreak is in progress. */
   isTiebreak(): boolean;
 }
